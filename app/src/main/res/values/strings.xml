@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">FirstOSProject</string>
+    <string name="title_activity_maps">MapsActivity</string>
+    <string name="cap"><![CDATA[ <b> Foo</b> Bar <a href="foo?id=%s">baz</a> is cool]]></string>
+    <string name="styled_welcome_message"><h2>What is Android?</h2> <b>bool</b> aaaaa</string>
+    <string name="font_cap"><![CDATA[  <b"><font color="blue" size="+6">This is a paragraph.</font></b>  ]]></string>
+
+</resources>
