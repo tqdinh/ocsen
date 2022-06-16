@@ -1,41 +1,38 @@
 package com.example.firstosproject.viewmodel
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
+import android.content.ServiceConnection
+import android.location.Location
+import androidx.lifecycle.*
 
 
 import com.example.domain.MyResource
+import com.example.domain.entities.ImageInfo
 import com.example.domain.entities.PlaceInfo
-import com.example.domain.repositories.Repository
 import com.example.domain.usecases.MapUsecases
-import com.example.firstosproject.DI.BinderMapUsecase
 import com.example.firstosproject.DI.ProviderMapuseCase
-import com.example.firstosproject.DI.ProviderProvider
+import com.example.firstosproject.services.ForegroundLocationServiceConnection
+import com.google.android.gms.location.sample.foregroundlocation.data.LocationPreferences
+import com.google.android.gms.location.sample.foregroundlocation.data.LocationRepository
+import com.google.android.gms.location.sample.foregroundlocation.data.PlayServicesAvailabilityChecker
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-@HiltViewModel
-//class MapViewModel @Inject constructor(@ProviderProvider val repository: Repository) : ViewModel() {
-class MapViewModel @Inject constructor(@ProviderMapuseCase val usecases: MapUsecases) :
-    ViewModel() {
+//import com.google.android.gms.location.sample.foregroundlocation.data.LocationPreferences
 
-//    val bindTrigger = MutableStateFlow<Boolean>(false)
-//    val uiLiveDataBind: LiveData<MyDataHolder<Any>> = bindTrigger.flatMapLatest {
-//        if(it)
-//            usecases.
-//            getData()
-//            //repository.getData()
-//        else
-//            flow {  }
-//
-//    }.asLiveData()
+@HiltViewModel
+class MapViewModel @Inject constructor(
+    @ProviderMapuseCase val usecases: MapUsecases,
+    playServicesAvailabilityChecker: PlayServicesAvailabilityChecker,
+    val locationRepository: LocationRepository,
+    private val locationPreferences: LocationPreferences,
+    private val serviceConnection: ForegroundLocationServiceConnection
+) :
+    ViewModel(), ServiceConnection by serviceConnection {
+
+    val isReceivingLocationUpdates = locationRepository.isReceivingLocationUpdates
+    val lastLocation =locationRepository.lastLocation
 
 
 //    fun triggerOnBind() {
@@ -64,9 +61,52 @@ class MapViewModel @Inject constructor(@ProviderMapuseCase val usecases: MapUsec
         return (usecases.getPlacesInfo() as Flow<MyResource<ArrayList<PlaceInfo>>>).asLiveData()
     }
 
+    fun addImageInfo(placeId: String, imageInfo: ImageInfo): LiveData<MyResource<ImageInfo>> {
+        return (usecases.addImage(placeId, imageInfo) as Flow<MyResource<ImageInfo>>).asLiveData()
+    }
+
+
+    fun getImages(placeId: String): LiveData<MyResource<List<ImageInfo>>> {
+        return (usecases.getImagesInPlace(placeId) as Flow<MyResource<List<ImageInfo>>>).asLiveData()
+    }
+
 
     fun addPlace(placeInfo: PlaceInfo) {
         this.placeInfo.value = placeInfo
     }
 
+    fun updatePlace(id: String, imageInFoList: ArrayList<ImageInfo>) {
+
+    }
+
+
+    fun toggleLocationUpdates() {
+        if (isReceivingLocationUpdates.value) {
+            stopLocationUpdates()
+        } else {
+            startLocationUpdates()
+        }
+    }
+
+    private fun startLocationUpdates() {
+        serviceConnection.service?.startLocationUpdates()
+        // Store that the user turned on location updates.
+        // It's possible that the service was not connected for the above call. In that case, when
+        // the service eventually starts, it will check the persisted value and react appropriately.
+        viewModelScope.launch {
+            locationPreferences.setLocationTurnedOn(true)
+        }
+    }
+
+    private fun stopLocationUpdates() {
+        serviceConnection.service?.stopLocationUpdates()
+        // Store that the user turned off location updates.
+        // It's possible that the service was not connected for the above call. In that case, when
+        // the service eventually starts, it will check the persisted value and react appropriately.
+        viewModelScope.launch {
+            locationPreferences.setLocationTurnedOn(false)
+        }
+    }
+
 }
+

@@ -1,6 +1,10 @@
 package com.example.firstosproject.DI
 
 import android.app.Application
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
 import com.example.data.LocalDataSourceImpl
 import com.example.data.MapUseCasesImpl
@@ -11,12 +15,15 @@ import com.example.domain.repositories.Repository
 import com.example.domain.repositories.local.LocalDataSource
 import com.example.domain.repositories.remote.RemoteDataSource
 import com.example.domain.usecases.MapUsecases
+import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.location.LocationServices
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Qualifier
+import javax.inject.Singleton
 
 
 @Qualifier
@@ -58,4 +65,27 @@ object ModuleProvider {
     @Provides
     @ProviderMapuseCase
     fun provideMapUseCase(@ProviderProvider repository: Repository):MapUsecases=MapUseCasesImpl(repository)
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+object AppModule {
+
+    @Provides
+    @Singleton
+    fun provideGoogleApiAvailability() = GoogleApiAvailability.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideFusedLocationProviderClient(
+        application: Application
+    ) = LocationServices.getFusedLocationProviderClient(application)
+
+    @Provides
+    @Singleton
+    fun provideDataStore(application: Application): DataStore<Preferences> {
+        return PreferenceDataStoreFactory.create {
+            application.preferencesDataStoreFile("prefs")
+        }
+    }
 }

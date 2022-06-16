@@ -4,5 +4,23 @@
     <string name="cap"><![CDATA[ <b> Foo</b> Bar <a href="foo?id=%s">baz</a> is cool]]></string>
     <string name="styled_welcome_message"><h2>What is Android?</h2> <b>bool</b> aaaaa</string>
     <string name="font_cap"><![CDATA[  <b"><font color="blue" size="+6">This is a paragraph.</font></b>  ]]></string>
+    <string name="map_api">AIzaSyBVMwDbOR_35gJi-P_lXqEJtydHY_nU-2k</string>
+    <string name="title_activity_maps2">MapsActivity2</string>
+
+    <string name="initializing"> Initializing</string>
+    <string name="play_services_unavailable">Google Play Services are unavailable on this device.</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="not_started">Tap Start to receive location updates</string>
+
+    <string name="please_allow_permission">Please allow permission to access location</string>
+    <string name="permission_rationale_dialog_title">Permission needed</string>
+    <string name="permission_rationale_dialog_message">This app requires permission to access your location. Please accept.</string>
+
+    <string name="waiting_for_location">Waiting for location…</string>
+    <string name="location_lat_lng">Lat: %1$f\nLng: %2$f</string>
+    <string name="notification_channel_name">Location updates</string>
+    <string name="notification_title">Location updates</string>
+    <string name="capture_image_with_latlng">Capture (%1$f -%2$f)</string>
 
 </resources>

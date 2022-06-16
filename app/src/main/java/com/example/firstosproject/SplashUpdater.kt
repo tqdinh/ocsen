@@ -1,6 +1,7 @@
 package com.example.firstosproject
 
 import android.app.Activity
+import android.content.ContextWrapper
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -45,6 +46,7 @@ class SplashUpdater : AppCompatActivity() {
         setContentView(R.layout.activity_splash_updater)
 
         ll_text_view = findViewById(R.id.ll_text_view)
+
 
 
         // flatMapConcat()
