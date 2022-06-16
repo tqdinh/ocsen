@@ -7,6 +7,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
 import android.util.Log
+import androidx.camera.core.CameraSelector
 import androidx.lifecycle.*
 import com.example.data.local.entities.LocalImage
 
@@ -19,6 +20,7 @@ import com.example.domain.usecases.MapUsecases
 import com.example.firstosproject.DI.BinderMapUsecase
 import com.example.firstosproject.DI.ProviderMapuseCase
 import com.example.firstosproject.DI.ProviderProvider
+import com.google.android.gms.location.sample.foregroundlocation.data.LocationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -32,21 +34,16 @@ import javax.inject.Inject
 class PreviewViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val savedStateHandle: SavedStateHandle,
+    val locationRepository: LocationRepository,
     @ProviderMapuseCase val usecases: MapUsecases
 ) : ViewModel() {
-    val latCoordinate: Double? = savedStateHandle["LATCOOR"]
-    val longCoordinate: Double? = savedStateHandle["LONGCOOR"]
+    var lensFacing: Int = CameraSelector.LENS_FACING_BACK
 
-    val bindTrigger = MutableStateFlow<Boolean>(false)
-//    val uiLiveDataBind: LiveData<MyDataHolder<Any>> = bindTrigger.flatMapLatest {
-//        if(it)
-//            usecases.
-//            getData()
-//            //repository.getData()
-//        else
-//            flow {  }
-//
-//    }.asLiveData()
+    fun updateCameraLensFacing(lensFacing: Int) {
+        this.lensFacing = lensFacing
+    }
+
+    val lastLocation =locationRepository.lastLocation
 
     val placeInfo: MutableStateFlow<PlaceInfo> = MutableStateFlow(PlaceInfo(id = ""))
     val liveDataPlaceInfo: LiveData<MyResource<PlaceInfo>> = placeInfo.flatMapLatest {
@@ -85,41 +82,4 @@ class PreviewViewModel @Inject constructor(
 
     }
 
-//    @SuppressLint("MissingPermission")
-//    fun getLatAndLong(): Pair<Double, Double> {
-//        var lat = -90.0
-//        var long = 180.0
-//        var location: Location? = null
-//        try {
-//            val locationManager =
-//                applicationContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-//            // Providers are passive,gps,network
-//            val providers = locationManager.getProviders(true)
-//            for (provider in providers) {
-//                val locationListener = object : LocationListener {
-//                    override fun onLocationChanged(location: Location) {}
-//                    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
-//                    override fun onProviderEnabled(provider: String) {}
-//                    override fun onProviderDisabled(provider: String) {}
-//                }
-//                locationManager.requestLocationUpdates(provider, 0, 0F, locationListener)
-//                val lastKnownLocation = locationManager.getLastKnownLocation(provider)
-//                if (lastKnownLocation != null) {
-//                    location = lastKnownLocation
-//                    locationManager.removeUpdates(locationListener)
-//                }
-//            }
-//            if (location != null) {
-//                lat = location.latitude
-//                long = location.longitude
-//            } else {
-//                Log.d("LOCATION", "Cannot get device location")
-//            }
-//        } catch (e: Exception) {
-//            Log.e("LOCATION", e.toString())
-//
-//        }
-//        Log.d("LOCATION", "Location: $lat, $long")
-//        return lat to long
-//    }
 }

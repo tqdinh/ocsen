@@ -3,7 +3,9 @@ package com.example.firstosproject
 import android.graphics.*
 import android.icu.text.SimpleDateFormat
 import android.os.Build
+import android.util.DisplayMetrics
 import androidx.annotation.RequiresApi
+import com.google.android.play.core.assetpacks.dp
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.WriterException
 import com.google.zxing.qrcode.QRCodeWriter
@@ -36,7 +38,15 @@ class Util {
         fun combineImages(srcBitmap: Bitmap, overlayed: Bitmap): Bitmap? {
             var cs: Bitmap? = null
             val matrix = Matrix().apply { postRotate(90f) }
-            val background= Bitmap.createBitmap(srcBitmap, 0, 0, srcBitmap.width, srcBitmap.height, matrix, true)
+            val background = Bitmap.createBitmap(
+                srcBitmap,
+                0,
+                0,
+                srcBitmap.width,
+                srcBitmap.height,
+                matrix,
+                true
+            )
 
             val width: Int = background.width
             var height = background.height
@@ -68,25 +78,32 @@ class Util {
             return jsonObject.toString()
         }
 
-        fun getBitmapFromPathAndUpdateWithRQString(fullPath: String, qr: String) {
+        fun saveFileBitmapWithPath(fullPath: String, bitmap: Bitmap) {
+            try {
+                FileOutputStream(fullPath).use { out ->
+                    bitmap?.compress(
+                        Bitmap.CompressFormat.PNG,
+                        100,
+                        out
+                    ) // bmp is your Bitmap instance
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+
+        fun mergeQRToImageWithPath(fullPath: String, qr: String): Bitmap? {
+            var ret: Bitmap? = null
             val image = File(fullPath)
             val bmOptions = BitmapFactory.Options()
             var background = BitmapFactory.decodeFile(image.getAbsolutePath(), bmOptions)
             var qrCode = encodeAsBitmap(qr)
-            if(null!=qrCode) {
-             var mergedFile=   combineImages(background, qrCode)
-                try {
-                    FileOutputStream(fullPath).use { out ->
-                        mergedFile?.compress(
-                            Bitmap.CompressFormat.PNG,
-                            100,
-                            out
-                        ) // bmp is your Bitmap instance
-                    }
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                }
+            if (null != qrCode) {
+                ret = combineImages(background, qrCode)
+//                 mergedFile
+//
             }
+            return ret
 
         }
     }

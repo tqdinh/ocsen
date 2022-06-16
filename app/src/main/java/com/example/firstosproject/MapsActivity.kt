@@ -82,15 +82,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LifecycleOwner {
         binding = ActivityMapsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        //var b2 = BitmapFactory.decodeResource(getResources(), R.drawable.app_icon);
-
-//        val today = getCurrentDateTime()
-//        val jsonstring = getJsonString(today, "10.3", "12.7")
-//        val bitmapx = Util.encodeAsBitmap(jsonstring)
-//        var b1 = BitmapFactory.decodeResource(getResources(), R.drawable.cf);
-//        if (null != bitmapx) {
-//            var combine = Util.combineImages(b1, bitmapx)
-//        }
         viewModel.toggleLocationUpdates()
 
         if (checkPermission(Manifest.permission.CAMERA)) {
@@ -232,43 +223,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LifecycleOwner {
         viewModel.toggleLocationUpdates()
     }
 
-    @SuppressLint("MissingPermission")
-    fun getLatAndLong(context: Context): Pair<Double, Double> {
-        var lat = -90.0
-        var long = 180.0
-        var location: Location? = null
-        try {
-            val locationManager =
-                context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-            // Providers are passive,gps,network
-            val providers = locationManager.getProviders(true)
-            for (provider in providers) {
-                val locationListener = object : LocationListener {
-                    override fun onLocationChanged(location: Location) {}
-                    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
-                    override fun onProviderEnabled(provider: String) {}
-                    override fun onProviderDisabled(provider: String) {}
-                }
-                locationManager.requestLocationUpdates(provider, 0, 0F, locationListener)
-                val lastKnownLocation = locationManager.getLastKnownLocation(provider)
-                if (lastKnownLocation != null) {
-                    location = lastKnownLocation
-                    locationManager.removeUpdates(locationListener)
-                }
-            }
-            if (location != null) {
-                lat = location.latitude
-                long = location.longitude
-            } else {
-                Log.d("LOCATION", "Cannot get device location")
-            }
-        } catch (e: Exception) {
-            Log.e("LOCATION", e.toString())
-
-        }
-        Log.d("LOCATION", "Location: $lat, $long")
-        return lat to long
-    }
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap

@@ -1,7 +1,6 @@
 package com.example.firstosproject
 
 import android.Manifest
-import android.R
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
@@ -31,10 +30,11 @@ import com.example.domain.ResourceStatus
 import com.example.domain.entities.ImageInfo
 import com.example.domain.entities.PlaceInfo
 import com.example.firstosproject.databinding.ActivityCameraPreviewBinding
+import com.example.firstosproject.reviewImage.ReviewFragment
 import com.example.firstosproject.viewmodel.PreviewViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -43,7 +43,7 @@ import java.util.concurrent.Executors
 
 @AndroidEntryPoint
 class CameraPreview : AppCompatActivity(), LifecycleOwner {
-    val previewViewModel: PreviewViewModel by viewModels()
+    val viewModel: PreviewViewModel by viewModels()
 
     val PHOTO_EXTENSION = ".jpg"
     private val imageCapture: ImageCapture by lazy {
@@ -52,7 +52,6 @@ class CameraPreview : AppCompatActivity(), LifecycleOwner {
 
     private lateinit var rawPath: String
     private lateinit var cameraExecutor: ExecutorService
-    private var lensFacing = CameraSelector.LENS_FACING_BACK
     val REQUEST_LOCATION = 1011
     val REQUEST_CAMERA = 1012
 
@@ -66,7 +65,7 @@ class CameraPreview : AppCompatActivity(), LifecycleOwner {
         setContentView(binding.root)
         startCamera()
 
-        previewViewModel.liveDataPlaceInfo.observe(this, { it ->
+        viewModel.liveDataPlaceInfo.observe(this, { it ->
             when (it.status) {
                 ResourceStatus.LOADING -> {
 
@@ -85,8 +84,8 @@ class CameraPreview : AppCompatActivity(), LifecycleOwner {
 
         })
 
-        binding.tvLat.text = previewViewModel.latCoordinate.toString()
-        binding.tvLong.text = previewViewModel.longCoordinate.toString()
+//        binding.tvLat.text = previewViewModel.latCoordinate.toString()
+//        binding.tvLong.text = previewViewModel.longCoordinate.toString()
         if (checkPermission(Manifest.permission.CAMERA)) {
 
         } else {
@@ -122,13 +121,30 @@ class CameraPreview : AppCompatActivity(), LifecycleOwner {
         binding.btnTakePic.setOnClickListener({
             var latAndLong = getLatAndLong(applicationContext)
 
-            var placeId = previewViewModel.addPlace(
+            var placeId = viewModel.addPlace(
                 PlaceInfo(),
                 latAndLong
             )
             takePhoto(placeId)
         })
 
+        binding.ivSwitchCamera.setOnClickListener({
+            switchCamera()
+        })
+
+        binding.ivBack.setOnClickListener({
+            onBackPressed()
+        })
+
+        lifecycleScope.launch {
+            viewModel.lastLocation.collect {
+                it?.let {
+                    Log.d("--LOCATION--", "${it.latitude},--,${it.longitude}")
+                    binding.tvLat.text = it.latitude.toString()
+                    binding.tvLong.text = it.longitude.toString()
+                }
+            }
+        }
     }
 
     fun getOutputDirectory(context: Context): File {
@@ -167,19 +183,23 @@ class CameraPreview : AppCompatActivity(), LifecycleOwner {
                     val savedUri = outputFileResults.savedUri ?: Uri.fromFile(photoFile)
 
                     savedUri?.let {
+
                         val jsonInfo = Util.getJsonString(
-                            previewViewModel.latCoordinate.toString(),
-                            previewViewModel.longCoordinate.toString()
+                            viewModel.lastLocation.value?.latitude.toString(),
+                            viewModel.lastLocation.value?.longitude.toString()
                         )
-                        Util.getBitmapFromPathAndUpdateWithRQString(
+
+                        val dialog = ReviewFragment(
                             savedUri.path.toString(),
                             jsonInfo
                         )
+                        dialog.show(supportFragmentManager, null)
+//
 
                         lifecycleScope.launch {
                             withContext(Dispatchers.Main) {
 
-                                previewViewModel.addImageInfo(
+                                viewModel.addImageInfo(
                                     placeId,
                                     ImageInfo(
                                         path = it.path.toString(),
@@ -277,7 +297,7 @@ class CameraPreview : AppCompatActivity(), LifecycleOwner {
                 cameraProvider.unbindAll()
 
                 val cameraSelector =
-                    CameraSelector.Builder().requireLensFacing(lensFacing).build()
+                    CameraSelector.Builder().requireLensFacing(viewModel.lensFacing).build()
 
                 // Bind use cases to camera
                 cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
@@ -289,6 +309,17 @@ class CameraPreview : AppCompatActivity(), LifecycleOwner {
             }
 
         }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun switchCamera() {
+        val lensFacing = if (viewModel.lensFacing == CameraSelector.LENS_FACING_BACK)
+            CameraSelector.LENS_FACING_FRONT
+        else
+            CameraSelector.LENS_FACING_BACK
+
+        viewModel.updateCameraLensFacing(lensFacing)
+
+        startCamera()
     }
 
     private fun checkPermission(permission: String): Boolean {
