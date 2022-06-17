@@ -9,13 +9,15 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.net.Uri
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -23,13 +25,16 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import cn.pedant.SweetAlert.SweetAlertDialog
 import com.example.data.local.entities.LocalImage
 import com.example.domain.ResourceStatus
 import com.example.domain.entities.ImageInfo
 import com.example.domain.entities.PlaceInfo
 import com.example.firstosproject.databinding.ActivityCameraPreviewBinding
+import com.example.firstosproject.databinding.FragmentReviewBinding
 import com.example.firstosproject.reviewImage.ReviewFragment
 import com.example.firstosproject.viewmodel.PreviewViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -40,6 +45,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+
 
 @AndroidEntryPoint
 class CameraPreview : AppCompatActivity(), LifecycleOwner {
@@ -54,6 +60,8 @@ class CameraPreview : AppCompatActivity(), LifecycleOwner {
     private lateinit var cameraExecutor: ExecutorService
     val REQUEST_LOCATION = 1011
     val REQUEST_CAMERA = 1012
+    var currentlat=0.0
+    var currentLon=0.0
 
     private lateinit var binding: ActivityCameraPreviewBinding
 
@@ -140,6 +148,8 @@ class CameraPreview : AppCompatActivity(), LifecycleOwner {
             viewModel.lastLocation.collect {
                 it?.let {
                     Log.d("--LOCATION--", "${it.latitude},--,${it.longitude}")
+                    currentlat=it.latitude
+                    currentLon=it.longitude
                     binding.tvLat.text = it.latitude.toString()
                     binding.tvLong.text = it.longitude.toString()
                 }
@@ -183,28 +193,35 @@ class CameraPreview : AppCompatActivity(), LifecycleOwner {
                     val savedUri = outputFileResults.savedUri ?: Uri.fromFile(photoFile)
 
                     savedUri?.let {
-
                         val jsonInfo = Util.getJsonString(
                             viewModel.lastLocation.value?.latitude.toString(),
                             viewModel.lastLocation.value?.longitude.toString()
                         )
+                        ReviewFragment(savedUri.path.toString(),
+                            jsonInfo, { fullPath ->
+                                val fileToDelete = File(fullPath)
+                                fileToDelete.delete()
+                            }).show(supportFragmentManager, "review")
 
-                        val dialog = ReviewFragment(
+                        Util.mergeQRToImageWithPath(
                             savedUri.path.toString(),
                             jsonInfo
-                        )
-                        dialog.show(supportFragmentManager, null)
-//
+                        )?.let {
+                            Util.saveFileBitmapWithPath(savedUri.path.toString(), it)
+                        }
 
                         lifecycleScope.launch {
                             withContext(Dispatchers.Main) {
+
 
                                 viewModel.addImageInfo(
                                     placeId,
                                     ImageInfo(
                                         path = it.path.toString(),
                                         title = "title",
-                                        desc = "desc"
+                                        desc = "desc",
+                                        lat = currentlat,
+                                        lon = currentLon
                                     )
                                 ).observe(this@CameraPreview, {
                                     when (it.status) {
@@ -242,45 +259,9 @@ class CameraPreview : AppCompatActivity(), LifecycleOwner {
 
     @SuppressLint("MissingPermission")
     fun getLatAndLong(context: Context): Pair<Double, Double> {
-        var lat = -90.0
-        var long = 180.0
-        var location: Location? = null
-        try {
-            val locationManager =
-                context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-            // Providers are passive,gps,network
-            val providers = locationManager.getProviders(true)
-            for (provider in providers) {
-                val locationListener = object : LocationListener {
-                    override fun onLocationChanged(location: Location) {}
-                    override fun onStatusChanged(
-                        provider: String?,
-                        status: Int,
-                        extras: Bundle?
-                    ) {
-                    }
+        var lat = currentlat
+        var long = currentLon
 
-                    override fun onProviderEnabled(provider: String) {}
-                    override fun onProviderDisabled(provider: String) {}
-                }
-                locationManager.requestLocationUpdates(provider, 0, 0F, locationListener)
-                val lastKnownLocation = locationManager.getLastKnownLocation(provider)
-                if (lastKnownLocation != null) {
-                    location = lastKnownLocation
-                    locationManager.removeUpdates(locationListener)
-                }
-            }
-            if (location != null) {
-                lat = location.latitude
-                long = location.longitude
-            } else {
-                Log.d("LOCATION", "Cannot get device location")
-            }
-        } catch (e: Exception) {
-            Log.e("LOCATION", e.toString())
-
-        }
-        Log.d("LOCATION", "Location: $lat, $long")
         return lat to long
     }
 

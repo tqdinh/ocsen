@@ -31,12 +31,15 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.data.local.entities.LocalImage
 import com.example.domain.ResourceStatus
 import com.example.domain.entities.ImageInfo
 import com.example.domain.entities.PlaceInfo
 import com.example.firstosproject.Util.Companion.encodeAsBitmap
 import com.example.firstosproject.Util.Companion.getCurrentDateTime
 import com.example.firstosproject.Util.Companion.getJsonString
+import com.example.firstosproject.adapter.LocalImageAdapter
 import com.example.firstosproject.databinding.ActivityMapsBinding
 import com.example.firstosproject.services.ForegroundLocationService
 import com.example.firstosproject.viewmodel.MapViewModel
@@ -51,6 +54,8 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.WriterException
 import com.google.zxing.qrcode.QRCodeWriter
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import java.io.File
@@ -74,6 +79,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LifecycleOwner {
     val viewModel: MapViewModel by viewModels()
     var latCoordinate = 0.0
     var longCoordinate = 0.0
+    var localImageAdapter: LocalImageAdapter? = null
 
     @SuppressLint("NewApi")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,7 +87,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LifecycleOwner {
         cameraExecutor = Executors.newSingleThreadExecutor()
         binding = ActivityMapsBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
+        setupObserver()
+        setupView()
+        viewModel.getAllImage()
         viewModel.toggleLocationUpdates()
 
         if (checkPermission(Manifest.permission.CAMERA)) {
@@ -218,11 +226,69 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LifecycleOwner {
     }
 
 
+    fun setupObserver() {
+        lifecycleScope.launch {
+            viewModel.localImages.collect {
+                //it.size
+                localImageAdapter?.let { adapter ->
+                    adapter.updateListWithAllImage(it)
+                }
+            }
+        }
+    }
+
     override fun onCreateView(name: String, context: Context, attrs: AttributeSet): View? {
         return super.onCreateView(name, context, attrs)
         viewModel.toggleLocationUpdates()
     }
 
+
+    fun openStreeView(lat: Double, lng: Double) {
+
+        val gmmIntentUri =
+            Uri.parse("google.streetview:cbll=${lat},${lng}")
+
+
+        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+
+        mapIntent.setPackage("com.google.android.apps.maps")
+
+
+        startActivity(mapIntent)
+
+
+    }
+
+    fun openGeo(lat: Double, lng: Double) {
+        val gmmIntentUri = Uri.parse( "geo:${lat},${lng}?z=17&q=${lat},${lng}")
+        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+        mapIntent.setPackage("com.google.android.apps.maps")
+        mapIntent.resolveActivity(packageManager)?.let {
+            startActivity(mapIntent)
+        }
+    }
+
+    fun setupView() {
+        localImageAdapter = LocalImageAdapter(object : LocalImageAdapter.OnItemClickListener {
+            override fun onItemClick(item: LocalImage) {
+
+                item.imageInfo?.let {
+                    openGeo(it.lat, it.lon)
+                }
+
+            }
+        })
+
+
+        val linearlayout =
+            LinearLayoutManager(this@MapsActivity, LinearLayoutManager.HORIZONTAL, false)
+        binding.rvImages.apply {
+            adapter = localImageAdapter
+            itemAnimator = null
+            layoutManager = linearlayout
+
+        }
+    }
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap

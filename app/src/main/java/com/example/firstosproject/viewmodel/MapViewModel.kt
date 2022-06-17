@@ -2,7 +2,9 @@ package com.example.firstosproject.viewmodel
 
 import android.content.ServiceConnection
 import android.location.Location
+import android.util.Log
 import androidx.lifecycle.*
+import com.example.data.local.entities.LocalImage
 
 
 import com.example.domain.MyResource
@@ -15,9 +17,13 @@ import com.google.android.gms.location.sample.foregroundlocation.data.LocationPr
 import com.google.android.gms.location.sample.foregroundlocation.data.LocationRepository
 import com.google.android.gms.location.sample.foregroundlocation.data.PlayServicesAvailabilityChecker
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.lang.Exception
+import java.util.*
 import javax.inject.Inject
+import kotlin.collections.ArrayList
 
 //import com.google.android.gms.location.sample.foregroundlocation.data.LocationPreferences
 
@@ -32,8 +38,32 @@ class MapViewModel @Inject constructor(
     ViewModel(), ServiceConnection by serviceConnection {
 
     val isReceivingLocationUpdates = locationRepository.isReceivingLocationUpdates
-    val lastLocation =locationRepository.lastLocation
+    val lastLocation = locationRepository.lastLocation
 
+
+    var _localImages = MutableStateFlow<ArrayList<LocalImage>>(arrayListOf<LocalImage>())
+    val localImages=_localImages.asStateFlow()
+    fun getAllImage() {
+        viewModelScope.launch(Dispatchers.IO) {
+            var ret = usecases.getAllImage()
+            try {
+                val arrayOfLocalImage = ret as Array<LocalImage>
+
+                val listOfImage=ArrayList<LocalImage>()
+                for(img in arrayOfLocalImage)
+                    listOfImage.add(img)
+                _localImages.value = listOfImage
+
+            }
+            catch (e:Exception)
+            {
+
+            }
+
+        }
+
+
+    }
 
 //    fun triggerOnBind() {
 //        viewModelScope.launch {
