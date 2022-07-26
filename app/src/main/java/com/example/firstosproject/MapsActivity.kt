@@ -7,14 +7,9 @@ import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Color
-import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
 import android.net.Uri
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
@@ -32,13 +27,13 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.PagerSnapHelper
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SnapHelper
 import com.example.data.local.entities.LocalImage
 import com.example.domain.ResourceStatus
 import com.example.domain.entities.ImageInfo
 import com.example.domain.entities.PlaceInfo
-import com.example.firstosproject.Util.Companion.encodeAsBitmap
-import com.example.firstosproject.Util.Companion.getCurrentDateTime
-import com.example.firstosproject.Util.Companion.getJsonString
 import com.example.firstosproject.adapter.LocalImageAdapter
 import com.example.firstosproject.databinding.ActivityMapsBinding
 import com.example.firstosproject.services.ForegroundLocationService
@@ -50,14 +45,13 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.WriterException
-import com.google.zxing.qrcode.QRCodeWriter
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.overlay.Marker
 import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -87,6 +81,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LifecycleOwner {
         cameraExecutor = Executors.newSingleThreadExecutor()
         binding = ActivityMapsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        Configuration.getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this))
+        binding.map.setTileSource(TileSourceFactory.MAPNIK)
+
+        binding.map.setBuiltInZoomControls(true)
+        binding.map.setMultiTouchControls(true)
+
+
+        val mapController = binding.map.controller
+        mapController.setZoom(13)
+
+
+//
+
+
         setupObserver()
         setupView()
         viewModel.getAllImage()
@@ -260,12 +269,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LifecycleOwner {
     }
 
     fun openGeo(lat: Double, lng: Double) {
-        val gmmIntentUri = Uri.parse( "geo:${lat},${lng}?z=17&q=${lat},${lng}")
+        val gmmIntentUri = Uri.parse("geo:${lat},${lng}?z=17&q=${lat},${lng}")
         val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
         mapIntent.setPackage("com.google.android.apps.maps")
         mapIntent.resolveActivity(packageManager)?.let {
             startActivity(mapIntent)
         }
+    }
+
+    private fun getCurrentItem(): Int {
+        return (binding.rvImages.getLayoutManager() as LinearLayoutManager)
+            .findFirstVisibleItemPosition()
     }
 
     fun setupView() {
@@ -286,8 +300,28 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LifecycleOwner {
             adapter = localImageAdapter
             itemAnimator = null
             layoutManager = linearlayout
+            val snapHelper: SnapHelper = PagerSnapHelper()
+            snapHelper.attachToRecyclerView(this);
 
         }
+        binding.rvImages.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            //
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+
+                if (newState === RecyclerView.SCROLL_STATE_IDLE) {
+                    val position = getCurrentItem()
+
+                    val localimage = localImageAdapter?.getItem(position)
+//                    Log.d("ON_SCROLL__", .toString())
+                    Log.d("ON_SCROLL__", "$position")
+                    localimage?.imageInfo?.let {
+                        moveToGeo(it.lat, it.lon)
+                    }
+
+                }
+            }
+
+        })
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -296,6 +330,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LifecycleOwner {
         val sydney = LatLng(-34.0, 151.0)
         mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+    }
+
+    fun moveToGeo(lat: Double, lng: Double) {
+        val startMarker = Marker(binding.map)
+        startMarker.setPosition(GeoPoint(lat, lng))
+        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+        binding.map.getOverlays().add(startMarker)
+        binding.map.controller.animateTo(GeoPoint(lat,lng))
     }
 
     private fun checkPermission(permission: String): Boolean {

@@ -46,4 +46,10 @@ class LocalImageAdapter(private val onItemClickListener: OnItemClickListener) :
     override fun getItemCount(): Int {
         return listOfImage.size
     }
+
+    fun getItem(position: Int): LocalImage {
+        return listOfImage.get(position)
+    }
+
+
 }

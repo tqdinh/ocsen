@@ -124,6 +124,11 @@ dependencies {
 
     implementation 'com.github.f0ris.sweetalert:library:1.5.6'
 
+    def osm_version = "6.1.2"
+    implementation "org.osmdroid:osmdroid-android: $osm_version"
+    implementation "org.osmdroid:osmdroid-wms:$osm_version"
+    implementation "org.osmdroid:osmdroid-mapsforge:$osm_version"
+    implementation "org.osmdroid:osmdroid-geopackage:$osm_version"
 }
 
 kapt {
