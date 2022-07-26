@@ -2,6 +2,7 @@ package com.example.data
 
 import androidx.room.RoomDatabase
 import com.example.data.local.database.LocalDatabase
+import com.example.data.local.entities.LocalImage
 import com.example.data.local.entities.LocalPlace
 import com.example.domain.MyResource
 
@@ -27,7 +28,7 @@ class LocalDataSourceImpl @Inject constructor(val database: LocalDatabase) : Loc
 
     override fun insertPlaceInfo(placeInfo: PlaceInfo): MyResource<Any> {
         database.localPlaceDao()
-            .insertLocalPlace(placeInfo.let { LocalPlace(lat = it.lat, lon = it.lon) })
+            .insertLocalPlace(placeInfo.let { LocalPlace(id=placeInfo.id,lat = it.lat, lon = it.lon) })
         return MyResource.SUCCESS(placeInfo)
     }
 
@@ -46,11 +47,35 @@ class LocalDataSourceImpl @Inject constructor(val database: LocalDatabase) : Loc
         TODO("Not yet implemented")
     }
 
-    override fun addImageToPlace(placeInfo: PlaceInfo, imageInfo: ImageInfo) {
-        TODO("Not yet implemented")
+    override fun addImageInfo(id: String, imageInfo: ImageInfo) {
+
     }
+
+    override fun addImage(placeId: String, imageInfo: ImageInfo): Any {
+
+        val localPlace = LocalImage(
+            place_id = placeId,
+            imageInfo = imageInfo
+        )
+        database.localImageDao().insertImage(localPlace)
+
+        return localPlace
+    }
+
+    override fun getImagesInPlace(placeId: String): Any {
+        return database.localImageDao().getImagesOnPlace(placeId)
+    }
+
 
     override fun remoteImageFromPlace(placeInfo: PlaceInfo, imageInfo: ImageInfo) {
         TODO("Not yet implemented")
+    }
+
+    override fun getAllImage(): Any {
+        return database.localImageDao().getListLocalImage()
+    }
+
+    override fun deleteImage(imageId: String) {
+        database.localImageDao().deleteImage(imageId)
     }
 }

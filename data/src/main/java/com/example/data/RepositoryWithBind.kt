@@ -34,16 +34,32 @@ class RepositoryWithBind @Inject constructor()  : Repository {
         TODO("Not yet implemented")
     }
 
+    override fun addImageInfo(id: String, imageInfo: ImageInfo): Flow<MyResource<Any>> {
+        TODO("Not yet implemented")
+    }
+
     override fun getPlacesInfo(): Flow<MyResource<Any>> {
         TODO("Not yet implemented")
     }
 
-
-    override fun addImageToPlace(placeInfo: PlaceInfo, imageInfo: ImageInfo): MyResource<Any> {
+    override fun addImage(placeId: String, imageInfo: ImageInfo): Flow<MyResource<Any>> {
         TODO("Not yet implemented")
     }
 
+    override fun getImagesInPlace(placeId: String): Flow<MyResource<Any>> {
+        TODO("Not yet implemented")
+    }
+
+
     override fun remoteImageFromPlace(placeInfo: PlaceInfo, imageInfo: ImageInfo): MyResource<Any> {
+        TODO("Not yet implemented")
+    }
+
+    override fun getAllImage(): Any {
+        TODO("Not yet implemented")
+    }
+
+    override fun deleteImage(imageId: String) {
         TODO("Not yet implemented")
     }
 

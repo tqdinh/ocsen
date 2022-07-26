@@ -4,6 +4,8 @@ import android.os.Parcelable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverter
+import androidx.room.TypeConverters
+import com.example.domain.entities.ImageInfo
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.android.parcel.Parcelize
@@ -12,24 +14,35 @@ import java.lang.reflect.Type
 import java.util.*
 import kotlin.collections.ArrayList
 
-@Entity(tableName = "LocalImageTable")
+@Entity(tableName = "LocalImageTable", primaryKeys = ["id", "place_id"])
 @Parcelize
+@TypeConverters(ImageInfoConverter::class)
 data class LocalImage(
-
-    @PrimaryKey
     @SerialName("id")
-    val id:String= UUID.randomUUID().toString(),
-    @SerialName("path")
-    val path:String="",
-    @SerialName("title")
-    val tille:String="",
-    @SerialName("desc")
-    val desc:String=""
-): Parcelable
+    val id: String = UUID.randomUUID().toString(),
+    @SerialName("place_id")
+    val place_id: String,
 
-class LocalImageConverter
-{
+    @SerialName("imageInfo")
+    val imageInfo: ImageInfo?=null
 
+) : Parcelable
+
+
+class ImageInfoConverter {
+    @TypeConverter
+    fun stringToModel(data: String?): ImageInfo? {
+        return Gson().fromJson(data, ImageInfo::class.java)
+    }
+
+    @TypeConverter
+    fun modelToString(model: ImageInfo?): String? {
+        return Gson().toJson(model)
+    }
+
+}
+
+class LocalImageConverter {
 
     @TypeConverter
     fun stringToLocalImageList(data: String?): ArrayList<LocalImage?>? {

@@ -23,15 +23,29 @@ class MapUseCasesImpl @Inject constructor(val repository: Repository) : MapUseca
         TODO("Not yet implemented")
     }
 
+    override fun addImageInfo(id: String, imageInfo: ImageInfo) {
+
+    }
+
     override fun getPlacesInfo(): Flow<MyResource<Any>> {
         return repository.getPlacesInfo()
     }
 
-    override fun addImageToPlace(placeInfo: PlaceInfo, imageInfo: ImageInfo) {
-        TODO("Not yet implemented")
+    override fun addImage(placeId: String, imageInfo: ImageInfo): Flow<MyResource<Any>> {
+        return repository.addImage(placeId, imageInfo)
     }
 
-    override fun remoteImageFromPlace(placeInfo: PlaceInfo, imageInfo: ImageInfo): ArrayList<Any> {
-        TODO("Not yet implemented")
+    override fun getImagesInPlace(placeId: String): Flow<MyResource<Any>> {
+        return repository.getImagesInPlace(placeId)
     }
+
+    override fun getAllImage(): Any {
+        return repository.getAllImage()
+    }
+
+    override fun deleteImage(imageId: String) {
+        repository.deleteImage(imageId)
+    }
+
+
 }

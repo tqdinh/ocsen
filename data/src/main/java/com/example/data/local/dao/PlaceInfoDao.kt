@@ -8,20 +8,29 @@ import com.example.data.local.entities.LocalPlace
 @Dao
 abstract class LocalPlaceDao {
     @Query("SELECT * FROM LocalPlaceTable")
-    abstract fun getListLocalPlace():List<LocalPlace>
+    abstract fun getListLocalPlace(): List<LocalPlace>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract fun insertLocalPlace(place:LocalPlace)
+    abstract fun insertLocalPlace(place: LocalPlace)
 
     @Query("DELETE FROM LocalPlaceTable WHERE id=:id")
-    abstract fun deletePlace(id:String)
+    abstract fun deletePlace(id: String)
+
+
 }
 
 @Dao
-abstract class LocalImageDao{
+abstract class LocalImageDao {
     @Query("SELECT * FROM LocalImageTable")
-    abstract fun getListLocalImage():Array<LocalImage>
+    abstract fun getListLocalImage(): Array<LocalImage>
 
     @Insert
-    abstract fun insertImage(localImage:LocalImage)
+    abstract fun insertImage(localImage: LocalImage)
+
+    @Query("SELECT * FROM LocalImageTable WHERE place_id=:placeId")
+    abstract fun getImagesOnPlace(placeId: String): List<LocalImage>
+
+    @Query("DELETE FROM LocalImageTable WHERE id=:imgId")
+    abstract fun deleteImage(imgId: String)
+
 }

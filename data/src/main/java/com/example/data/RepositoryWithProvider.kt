@@ -62,6 +62,17 @@ class RepositoryWithProvider @Inject constructor(
         TODO("Not yet implemented")
     }
 
+    override fun addImageInfo(id: String, imageInfo: ImageInfo) :Flow<MyResource<Any>>{
+        return flow<MyResource<Any>> {
+            emit(MyResource.LOADING(null))
+            emit(MyResource.SUCCESS(localDataSource))
+        }.catch { e ->
+
+            emit(MyResource.FAIL(null, e.toString()))
+        }
+            .flowOn(Dispatchers.IO)
+    }
+
     override fun getPlacesInfo(): Flow<MyResource<Any>> {
         return flow<MyResource<Any>> {
             emit(MyResource.LOADING(null))
@@ -73,12 +84,39 @@ class RepositoryWithProvider @Inject constructor(
             .flowOn(Dispatchers.IO)
     }
 
-    override fun addImageToPlace(placeInfo: PlaceInfo, imageInfo: ImageInfo): MyResource<Any> {
-        TODO("Not yet implemented")
+    override fun addImage(placeId:String,imageInfo: ImageInfo): Flow<MyResource<Any>> {
+        return flow<MyResource<Any>> {
+            emit(MyResource.LOADING(null))
+            emit(MyResource.SUCCESS(localDataSource.addImage(placeId,imageInfo)))
+        }
+            .catch { e ->
+                emit(MyResource.FAIL(null, e.toString()))
+            }
+            .flowOn(Dispatchers.IO)
     }
+
+    override fun getImagesInPlace(placeId: String): Flow<MyResource<Any>> {
+        return flow<MyResource<Any>> {
+            emit(MyResource.LOADING(null))
+            emit(MyResource.SUCCESS(localDataSource.getImagesInPlace(placeId)))
+        }
+            .catch { e ->
+                emit(MyResource.FAIL(null, e.toString()))
+            }
+            .flowOn(Dispatchers.IO)
+    }
+
 
     override fun remoteImageFromPlace(placeInfo: PlaceInfo, imageInfo: ImageInfo): MyResource<Any> {
         TODO("Not yet implemented")
+    }
+
+    override fun getAllImage(): Any {
+        return localDataSource.getAllImage()
+    }
+
+    override fun deleteImage(imageId: String) {
+        localDataSource.deleteImage(imageId)
     }
 
 
